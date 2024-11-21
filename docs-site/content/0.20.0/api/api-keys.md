@@ -95,6 +95,77 @@ By setting both `actions` and `collections` to a wildcard `['*']` scope, we're a
 The generated key is only returned during creation. You want to store this key carefully in a secure place.
 :::
 
+If you need an API Key equivalent to the Admin key but without the ability to manage API Keys see below.
+
+#### Admin API Key without manage key permissions.
+
+This key is equivalent to the admin key, when it comes to the collections scope. This Key can create, edit or delete any collection.
+
+The only difference is, it cannot manage API Keys, create, retrieve or delete.
+
+You might want to use this Key in an backend service that needs to interact with all your collections.
+
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Shell']">
+  <template v-slot:JavaScript>
+
+```js
+key = client.keys().create({
+  'description': 'Almost Admin key.',
+  'actions': ['collections:*'],
+  'collections': ['*']
+})
+```
+
+  </template>
+
+  <template v-slot:PHP>
+
+```php
+$key = $client->keys->create([
+  'description' => 'Almost Admin key.',
+  'actions' => ['collections:*'],
+  'collections' => ['*']
+]);
+```
+
+  </template>
+  <template v-slot:Python>
+
+```py
+key = client.keys.create({
+  "description": "Almost Admin key.",
+  "actions": ["collections:*"],
+  "collections": ["*"]
+})
+
+```
+
+  </template>
+  <template v-slot:Ruby>
+
+```rb
+key = client.keys.create({
+  'description' => 'Almost Admin key.',
+  'actions' => ['collections:*'],
+  'collections' => ['*']
+})
+
+```
+
+  </template>
+  <template v-slot:Shell>
+
+```bash
+curl 'http://localhost:8108/keys' \
+    -X POST \
+    -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
+    -H 'Content-Type: application/json' \
+    -d '{"description":"Almost Admin key.","actions": ["collections:*"], "collections": ["*"]}'
+```
+
+  </template>
+</Tabs>
+
 #### Search-only API Key
 
 Let's now see how we can create a search-only key that allows you to limit the key's scope to only the search action, and also for only a specific collection.

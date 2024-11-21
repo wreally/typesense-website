@@ -168,6 +168,58 @@ documents = [
 client.collections['books'].documents.import_(documents)</pre
           >
 
+          <pre data-language="go">
+// go get github.com/typesense/typesense-go
+
+package main
+
+import (
+	"github.com/typesense/typesense-go/typesense"
+	"github.com/typesense/typesense-go/typesense/api"
+	"github.com/typesense/typesense-go/typesense/api/pointer"
+)
+
+func main() {
+	client := typesense.NewClient(
+		typesense.WithServer("http://localhost:8108"),
+		typesense.WithAPIKey("xyz"),
+	)
+
+	schema := &api.CollectionSchema{
+		Name: "books",
+		Fields: []api.Field{
+			{Name: "title", Type: "string"},
+			{Name: "author", Type: "string"},
+			{Name: "ratings", Type: "int32"},
+		},
+		DefaultSortingField: pointer.String("ratings"),
+	}
+
+	client.Collections().Create(schema)
+
+	newDocument := func(title, author string, ratings int32) interface{} {
+		return struct {
+			Title   string `json:"title"`
+			Author  string `json:"author"`
+			Ratings int32  `json:"ratings"`
+		}{title, author, ratings}
+	}
+
+	documents := []interface{}{
+		newDocument("Book 1", "Author1", 24),
+		newDocument("Book 2", "Author2", 31),
+		newDocument("Book 3", "Author2", 30),
+	}
+
+	params := &api.ImportDocumentsParams{
+		Action:    pointer.String("create"),
+		BatchSize: pointer.Int(40),
+	}
+
+	client.Collection("books").Documents().Import(documents, params)
+}</pre
+          >
+
           <pre data-language="ruby">
 # gem install typesense
 
@@ -227,6 +279,11 @@ print(client.collections['books'].documents.search({
   'query_by': 'title,author',
   'q': 'boo'
 }))</pre
+          >
+          <pre data-language="go">
+  result, _ := client.Collection("books").Documents().Search(searchParameters)
+	buf, _ := json.Marshal(result)
+	fmt.Println(string(buf))</pre
           >
           <pre data-language="ruby">
 puts client.collections['books'].documents.search({

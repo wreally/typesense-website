@@ -6,7 +6,7 @@ sitemap:
 
 # Collections
 
-In Typesense, every record you index is called a `Document` and a group of documents with similar fields is called a `Collection`. 
+In Typesense, every record you index is called a `Document` and a group of documents with similar fields is called a `Collection`.
 A Collection is roughly equivalent to a table in a relational database.
 
 ## Create a collection
@@ -31,7 +31,7 @@ There are two ways to specify a schema:
 2. [Have Typesense automatically detect your fields and data types](#with-auto-schema-detection) based on the documents you index.
 
 The simplest option is [#2](#with-auto-schema-detection) where you don't have to worry about defining an explicit schema.
-But if you need more fine-grained control and/or validation, you want to use [#1](#with-pre-defined-schema) or even mix both together. 
+But if you need more fine-grained control and/or validation, you want to use [#1](#with-pre-defined-schema) or even mix both together.
 
 ### With pre-defined schema
 
@@ -39,9 +39,9 @@ Let's first create a collection with an explicit, pre-defined schema.
 
 This option gives you fine-grained control over your document fields' [data types](#field-types) and configures your collection to reject documents that don't match the data types defined in your schema ([by default](./documents.md#dealing-with-dirty-data)).
 
-If you want Typesense to automatically detect your schema for you, skip over to [auto-schema detection](#with-auto-schema-detection). 
+If you want Typesense to automatically detect your schema for you, skip over to [auto-schema detection](#with-auto-schema-detection).
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -168,7 +168,33 @@ final schema = Schema(
 
 await client.collections.create(schema);
 ```
-    
+
+  </template>
+  <template v-slot:Go>
+
+```go
+schema := &api.CollectionSchema{
+  Name: "companies",
+  Fields: []api.Field{
+    {
+      Name: "company_name",
+      Type: "string",
+    },
+    {
+      Name: "num_employees",
+      Type: "int32",
+    },
+    {
+      Name:  "country",
+      Type:  "string",
+      Facet: pointer.True(),
+    },
+  },
+  DefaultSortingField: pointer.String("num_employees"),
+}
+
+client.Collections().Create(context.Background(), schema)
+```
   </template>
   <template v-slot:Java>
 
@@ -251,22 +277,22 @@ See [Schema Parameters](#schema-parameters) for all available options, and [Fiel
 `POST ${TYPESENSE_HOST}/collections`
 
 :::warning IMPORTANT NOTE & TIP
-All fields you mention in a collection's schema will be indexed _in memory_. 
+All fields you mention in a collection's schema will be indexed _in memory_.
 
 There might be cases where you don't intend to search / filter / facet / group by a particular field and just want it to be stored (on disk) and returned as is when a document is a search hit.
-For eg: you can store image URLs in every document that you might use when displaying search results, but you might not want to text-search the actual URLs. 
+For eg: you can store image URLs in every document that you might use when displaying search results, but you might not want to text-search the actual URLs.
 
-You want to NOT mention these fields in the collection's schema or mark these fields as `index: false` (see `fields` [schema parameter](#schema-parameters) below) to mark it as an unindexed field. 
+You want to NOT mention these fields in the collection's schema or mark these fields as `index: false` (see `fields` [schema parameter](#schema-parameters) below) to mark it as an unindexed field.
 You can have any number of these additional unindexed fields in the documents when adding them to a collection - they will just be stored on disk, and will not take up any memory.
 :::
 
 ### With auto schema detection
- 
-If your field names are dynamic and not known upfront, or if you just want to keep things simple and index all fields you send in your documents by default,
-auto-schema detection should help you. 
 
-You can define a wildcard field with the name `.*` and  type `auto` to let Typesense automatically 
-detect the type of the fields when you [add documents](./documents.md#index-a-single-document) to the collection. 
+If your field names are dynamic and not known upfront, or if you just want to keep things simple and index all fields you send in your documents by default,
+auto-schema detection should help you.
+
+You can define a wildcard field with the name `.*` and  type `auto` to let Typesense automatically
+detect the type of the fields when you [add documents](./documents.md#index-a-single-document) to the collection.
 In fact, you can use **any RegEx expression to define a field name**.
 
 <Tabs :tabs="['JSON']">
@@ -274,7 +300,7 @@ In fact, you can use **any RegEx expression to define a field name**.
 
 ```json
 {
-  "name": "companies",  
+  "name": "companies",
   "fields": [
     {"name": ".*", "type": "auto" }
   ]
@@ -334,9 +360,9 @@ You can control this default coercion behavior at write-time with the [`dirty_va
 
 #### Faceting fields with auto-schema detection
 
-[Faceting](./search.md#facet-results) is not enabled for a wildcard field `{"name": ".*" , ...}`, since that can consume a lot of memory, 
-especially for large text fields. However, you can still explicitly define specific fields (with or without RegEx names) to facet by 
-setting `facet: true` for them. 
+[Faceting](./search.md#facet-results) is not enabled for a wildcard field `{"name": ".*" , ...}`, since that can consume a lot of memory,
+especially for large text fields. However, you can still explicitly define specific fields (with or without RegEx names) to facet by
+setting `facet: true` for them.
 
 For e.g, when you define a schema like this:
 
@@ -357,7 +383,7 @@ This will only set field names that end with `_facet` in the document, as a face
 
 #### `Geopoint` and auto-schema detection
 
-A [`geopoint` field](#field-types) requires an explicit type definition, as the geo field value is represented as a 2-element 
+A [`geopoint` field](#field-types) requires an explicit type definition, as the geo field value is represented as a 2-element
 float field and we cannot differentiate between a lat/long definition and an actual float array.
 
 #### Indexing all but some fields
@@ -373,7 +399,7 @@ For eg, if you want to index all fields, except for fields that start with `desc
 
 ```json
 {
-  "name": "companies",  
+  "name": "companies",
   "fields": [
     {"name": ".*", "type": "auto" },
     {"name": ".*_facet", "type": "auto", "facet": true },
@@ -393,7 +419,7 @@ If an explicit definition is available for a field (`country` in the example abo
 preference to that before falling back to the wildcard definition.
 
 When such an explicit field definition is not available, the first document that contains a field with a given name
-determines the type of that field. 
+determines the type of that field.
 
 For example, if you index a document with a field named `title` and it is a
 string, then the next document that contains the field named `title` will be expected to have a string too.
@@ -406,8 +432,8 @@ string, then the next document that contains the field named `title` will be exp
 | name                  | yes      | Name of the collection you wish to create.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | fields                | yes      | A list of fields that you wish to index for [querying](./search.md#query-parameters), [filtering](./search.md#filter-results), [faceting](./search.md#facet-results), [grouping](./search.md#group-results) and [sorting](./search.md#sort-results). For each field, you have to specify at least it's `name` and [`type`](#field-types).<br><br> Eg: ```{"name": "title", "type": "string", "facet": false, "index": true}``` <br><br>`name` can be a simple string like `"name": "score"`. Or you can also use a RegEx to specify field names matching a pattern. For eg: if you want to specify that all fields starting with `score_` should be an integer, you can set name as `"name": "score_.*"`.<br><br>**Declaring a field as optional**<br>A field can be declared as optional by setting `"optional": true`.<br><br>**Declaring a field as a facet**<br>A field can be declared as a facetable field by setting `"facet": true`. Faceted fields are indexed verbatim without any tokenization or preprocessing. For example, if you are building a product search, `color` and `brand` could be defined as facet fields. Once a field is enabled for faceting in the schema, it can be used in the [`facet_by` search parameter](./search.md#facet-results)..<br><br>**Enabling stemming**<br>Stemming allows you to handle common word variations (singular / plurals, tense changes) of the same root word. For eg: searching for `walking`, will also return results with `walk`, `walked`, `walks`, etc when stemming is enabled. <br><br> Enable stemming on the contents of the field during indexing and querying by setting `"stem": true`. The actual value stored on disk is not affected. <br><br>We use the [Snowball stemmer](https://snowballstem.org/). Language selection for stemmer is automatically made from the value of the `locale` property associated with the field.<br><br>**Declaring a field as un-indexed**<br>You can set a field as un-indexed (you can't search/sort/filter/facet on it) by setting `"index": false`. This is useful when used along with [auto schema detection](#with-auto-schema-detection) and you need to [exclude certain fields from indexing](#indexing-all-but-some-fields).<br><br>**Prevent field from being stored on disk**:<br> Set `"store": false` to ensure that a field value is removed from the document before the document is saved to disk. <br><br>**Configuring language-specific tokenization:**<br> The default tokenizer that Typesense uses works for most languages, especially ones that separate words by spaces. However, based on feedback from users, we've added locale specific customizations for the following languages. You can enable these customizations for a field, by setting a field called `locale` inside the field definition. Eg: `{name: 'title', type: 'string', locale: 'ja'}` will enable the Japanese locale customizations for the field named `title`. <br><br>Here's the list of all language-specific customizations: <ul><li>`ja` - Japanese</li><li>`zh` - Chinese</li><li>`ko` - Korean</li><li>`th` - Thai</li><li>`el` - Greek</li><li>`ru` - Russian</li><li>`sr` - Serbian / Cyrillic</li><li>`uk` - Ukrainian</li><li>`be` - Belarusian</li> <li> For all other languages, you don't have to set the `locale` field.</li></ul> |
 | token_separators      | no       | List of symbols or special characters to be used for splitting the text into individual words _**in addition**_ to space and new-line characters.<br><br> For e.g. you can add `-` (hyphen) to this list to make a word like `non-stick` to be split on hyphen and indexed as two separate words. <br><br> Read [this guide article](../../guide/tips-for-searching-common-types-of-data.md) for more examples on how to use this setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| symbols_to_index      | no       | List of symbols or special characters to be indexed. <br><br>For e.g. you can add `+` to this list to make the word `c++` indexable verbatim. <br><br>Read [this guide article](../../guide/tips-for-searching-common-types-of-data.md) for more examples on how to use this setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 
-| default_sorting_field | no       | The name of an `int32 / float` field that determines the order in which the search results are ranked when a `sort_by` clause is not provided during searching. <br><br>This field must indicate some kind of popularity. For example, in a product search application, you could define `num_reviews` field as the `default_sorting_field` to rank products that have the most reviews higher by default.<br><br>Additionally, when a word in a search query matches multiple possible words (either during a prefix (partial word) search or because of a typo), this parameter is used to rank such equally matching records. <br><br>For e.g. Searching for "ap", will match records with "apple", "apply", "apart", "apron", or any of hundreds of similar words that start with "ap" in your dataset. Also, searching for "jofn", will match records with "john", "joan" and all similar variations that are 1-typo away in your dataset. <br><br>For performance reasons though, Typesense will only consider the top `4` prefixes or typo variations by default (the `4` is configurable using the [`max_candidates`](./search.md#ranking-and-sorting-parameters) search parameter, which defaults to `4`). <br><br>If `default_sorting_field` is NOT specified in the collection schema, then "top" is defined as the prefixes or typo variations with the most number of matching records. <br><br>But let's say you have a field called `popularity` in each record, and you want Typesense to use the value in that field to define the "top" records, you'd set that field as `default_sorting_field: popularity`. Typesense will then use the value of that field to fetch the top `max_candidates` number of terms that are most popular, and as users type in more characters, it will refine the search further to always rank the most popular prefixes highest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 
+| symbols_to_index      | no       | List of symbols or special characters to be indexed. <br><br>For e.g. you can add `+` to this list to make the word `c++` indexable verbatim. <br><br>Read [this guide article](../../guide/tips-for-searching-common-types-of-data.md) for more examples on how to use this setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| default_sorting_field | no       | The name of an `int32 / float` field that determines the order in which the search results are ranked when a `sort_by` clause is not provided during searching. <br><br>This field must indicate some kind of popularity. For example, in a product search application, you could define `num_reviews` field as the `default_sorting_field` to rank products that have the most reviews higher by default.<br><br>Additionally, when a word in a search query matches multiple possible words (either during a prefix (partial word) search or because of a typo), this parameter is used to rank such equally matching records. <br><br>For e.g. Searching for "ap", will match records with "apple", "apply", "apart", "apron", or any of hundreds of similar words that start with "ap" in your dataset. Also, searching for "jofn", will match records with "john", "joan" and all similar variations that are 1-typo away in your dataset. <br><br>For performance reasons though, Typesense will only consider the top `4` prefixes or typo variations by default (the `4` is configurable using the [`max_candidates`](./search.md#ranking-and-sorting-parameters) search parameter, which defaults to `4`). <br><br>If `default_sorting_field` is NOT specified in the collection schema, then "top" is defined as the prefixes or typo variations with the most number of matching records. <br><br>But let's say you have a field called `popularity` in each record, and you want Typesense to use the value in that field to define the "top" records, you'd set that field as `default_sorting_field: popularity`. Typesense will then use the value of that field to fetch the top `max_candidates` number of terms that are most popular, and as users type in more characters, it will refine the search further to always rank the most popular prefixes highest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ### Field parameters
 
@@ -454,7 +480,7 @@ Typesense allows you to index the following types of fields:
 
 ### Cloning a collection schema
 
-Here's how you can clone an existing collection's schema (documents are not copied), overrides and synonyms. 
+Here's how you can clone an existing collection's schema (documents are not copied), overrides and synonyms.
 
 ```shell
 curl -k "http://localhost:8108/collections?src_name=existing_coll" -X POST -H "Content-Type: application/json" \
@@ -463,17 +489,17 @@ curl -k "http://localhost:8108/collections?src_name=existing_coll" -X POST -H "C
       }'
 ```
 
-The above API call will create a new collection called `new_coll` that contains the schema, overrides and synonyms of 
-the collection `existing_coll`. The actual documents in the `existing_coll` collection are **not** copied, 
+The above API call will create a new collection called `new_coll` that contains the schema, overrides and synonyms of
+the collection `existing_coll`. The actual documents in the `existing_coll` collection are **not** copied,
 so this is primarily useful for creating new collections from an existing reference template.
 
 :::tip
-Cloning a collection this way, does **not** copy the data. 
+Cloning a collection this way, does **not** copy the data.
 :::
 
 ### Adding metadata to schema
 
-If you wish, you could populate a `metadata` object to the schema while creating a collection to add 
+If you wish, you could populate a `metadata` object to the schema while creating a collection to add
 details about the collection, for e.g. when it was created, who created it etc.
 
 ```json
@@ -513,7 +539,7 @@ You must first enable nested fields at a collection level via the `enable_nested
 ```shell{4,6-7}
 curl -k "http://localhost:8108/collections" -X POST -H "Content-Type: application/json" \
       -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" -d '{
-        "name": "docs", 
+        "name": "docs",
         "enable_nested_fields": true,
         "fields": [
           {"name": "person", "type": "object"},
@@ -543,7 +569,7 @@ And say you only want to index the `zip` field inside the `address` nested objec
 ```shell{7}
 curl -k "http://localhost:8108/collections" -X POST -H "Content-Type: application/json" \
       -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" -d '{
-        "name": "docs", 
+        "name": "docs",
         "enable_nested_fields": true,
         "fields": [
           {"name": "name", "type": "string"},
@@ -579,7 +605,7 @@ And say you only want to index the `zip` field inside each address object in the
 ```shell{7}
 curl -k "http://localhost:8108/collections" -X POST -H "Content-Type: application/json" \
       -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" -d '{
-        "name": "docs", 
+        "name": "docs",
         "enable_nested_fields": true,
         "fields": [
           {"name": "name", "type": "string"},
@@ -608,7 +634,7 @@ For example, a document like this containing nested objects:
       "fieldB": ["valueB", "valueC", "valueD"]
     }
   }
-}  
+}
 ```
 
 would need to be flattened as:
@@ -631,9 +657,9 @@ At display time when parsing the results, you can then use the nested version.
 #### Indexing Dates
 
 Dates need to be converted into [Unix timestamps](https://en.wikipedia.org/wiki/Unix_time) and stored as `int64` fields in Typesense.
-Most languages have libraries that help do this conversion for you. 
+Most languages have libraries that help do this conversion for you.
 
-You'll then be able to use numerical operators like `<`, `>`, etc to filter records that are before or after or between dates. 
+You'll then be able to use numerical operators like `<`, `>`, etc to filter records that are before or after or between dates.
 
 #### Indexing other types of data
 
@@ -642,7 +668,7 @@ Read our dedicated guide article on how to index other common types of data like
 ## Retrieve a collection
 Retrieve the details of a collection, given its name.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -676,13 +702,20 @@ client.collections['companies'].retrieve
 
 ```dart
 await client.collection('companies').retrieve();
-```    
+```
 
   </template>
   <template v-slot:Java>
 
 ```java
 CollectionResponse collection = client.collections("companies").retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("companies").Retrieve(context.Background())
 ```
 
   </template>
@@ -732,13 +765,13 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
 Returns a summary of all your collections. The collections are returned sorted by creation date, with the most recent collections appearing first.
 
 :::tip
-By default, ALL collections are returned, but you can use the `offset` and `limit` parameters to paginate on the 
+By default, ALL collections are returned, but you can use the `offset` and `limit` parameters to paginate on the
 collection listing.
 
 You can also set `exclude_fields=fields` to exclude the field definitions from being returned in the response.
 :::
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -779,6 +812,13 @@ await client.collections.retrieve();
 
 ```java
 CollectionResponse[] collectionResponses = client.collections().retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collections().Retrieve(context.Background())
 ```
 
   </template>
@@ -839,7 +879,7 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
 ## Drop a collection
 Permanently drops a collection. This action cannot be undone. For large collections, this might have an impact on read latencies.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -883,6 +923,13 @@ CollectionResponse collectionResponse = client.collections("companies").delete()
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("companies").Delete(context.Background())
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -890,7 +937,7 @@ let (collectionResponse, response) = try await client.collection(name: "companie
 ```
 
   </template>
-  
+
   <template v-slot:Shell>
 
 ```bash
@@ -943,7 +990,7 @@ Typesense supports updating all fields **except** the `id` field (since it's a s
 Let's see how we can add a new `company_category` field to the `companies` collection and also drop the existing
 `num_employees` field.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -970,7 +1017,7 @@ $update_schema = [
     [
       'name'  => 'company_category',
       'type'  => 'string'
-    ]    
+    ]
   ]
 ];
 $client->collections['companies']->update($update_schema);
@@ -981,7 +1028,7 @@ $client->collections['companies']->update($update_schema);
 
 ```py
 update_schema = {
-  'fields': [    
+  'fields': [
     {
       'name'  :  'num_employees',
       'drop'  :  True
@@ -1008,8 +1055,8 @@ update_schema = {
     {
       'name'  => 'company_category',
       'type'  => 'string'
-    }    
-  ]  
+    }
+  ]
 }
 client.collections['companies'].update(update_schema)
 ```
@@ -1021,7 +1068,7 @@ client.collections['companies'].update(update_schema)
 final updateSchema = UpdateSchema(
   {
     Field('num_employees', drop: true),
-    Field('company_category', Type.string)    
+    Field('company_category', Type.string)
   }
 );
 await client.collection('companies').update(updateSchema);
@@ -1038,13 +1085,27 @@ client.collections("companies").update(updateSchema);
 ```
 
 </template>
+<template v-slot:Go>
+
+```go
+updateSchema := &api.CollectionUpdateSchema{
+  Fields: []api.Field{
+    {Name: "num_employees", Drop: pointer.True()},
+    {Name: "company_category", Type: "string"},
+  },
+}
+
+client.Collection("companies").Update(context.Background(), updateSchema)
+```
+
+</template>
 <template v-slot:Swift>
 
 ```swift
 let updateSchema = CollectionUpdateSchema(
   fields: [
     Field(name: "num_employees", drop: true),
-    Field(name: "company_category", type: "string")    
+    Field(name: "company_category", type: "string")
   ]
 )
 try await client.collections.update(updateSchema: updateSchema)
@@ -1062,7 +1123,7 @@ curl "http://localhost:8108/collections/companies" \
        -d '{
          "fields": [
            {"name": "num_employees", "drop": true },
-           {"name": "company_category", "type": "string" }           
+           {"name": "company_category", "type": "string" }
          ]
        }'
 ```
@@ -1112,7 +1173,7 @@ to the field you want to remove.
 `PATCH ${TYPESENSE_HOST}/collections/:collection`
 
 :::warning
-The schema update operation is a synchronous **blocking** operation. 
+The schema update operation is a synchronous **blocking** operation.
 
 When a schema update is in progress, all incoming writes to _that particular collection_ will wait for the schema update operation to finish.
 In a multi-node HA cluster, the schema update is executed on all nodes in the cluster in parallel. So writes will be blocked across the entire cluster while the schema update is in progress.
@@ -1130,22 +1191,22 @@ Since the alter operation can take a long time, this ensures that a client with 
 not end up retrying the same alter request.
 :::
 
-The update operation consists of an initial validation step where the records on-disk are assessed to ensure 
-that they are compatible with the proposed schema change. For example, let's say there is a `string` field `A` which 
-is already present in the documents on-disk but is not part of the schema. If you try to update the collection 
-schema by adding a field `A` with type `integer`, the validation step will reject this change as it's incompatible 
+The update operation consists of an initial validation step where the records on-disk are assessed to ensure
+that they are compatible with the proposed schema change. For example, let's say there is a `string` field `A` which
+is already present in the documents on-disk but is not part of the schema. If you try to update the collection
+schema by adding a field `A` with type `integer`, the validation step will reject this change as it's incompatible
 with the type of data already present.
 
-If the validation is successful, the actual schema change is done and the records are 
-indexed / re-indexed / dropped as per the requested change. The process is complete as soon as the API call 
-returns (make sure you use a large client timeout value). Because of the blocking nature of the update, we 
-recommend doing the change during off-peak hours. 
+If the validation is successful, the actual schema change is done and the records are
+indexed / re-indexed / dropped as per the requested change. The process is complete as soon as the API call
+returns (make sure you use a large client timeout value). Because of the blocking nature of the update, we
+recommend doing the change during off-peak hours.
 
 Alternatively, you can also use the [alias feature](#using-an-alias) to do zero downtime schema changes.
 
 ### Modifying an existing field
 
-Since Typesense currently only supports adding/deleting a field, any modifications to an existing field should be 
+Since Typesense currently only supports adding/deleting a field, any modifications to an existing field should be
 expressed as a drop + add operation. All fields **except** the `id` field can be modified.
 
 For example, to add a `facet` property to the `company_category` field, we will drop + add it in the same change set:
@@ -1158,14 +1219,14 @@ curl "http://localhost:8108/collections/companies" \
        -d '{
          "fields": [
            {"name": "company_category", "drop": true },
-           {"name": "company_category", "type": "string", "facet": true }   
+           {"name": "company_category", "type": "string", "facet": true }
          ]
        }'
 ```
 
 ### Using an alias
 
-If you need to do zero-downtime schema changes, you could also re-create the collection fully with the updated schema and use 
+If you need to do zero-downtime schema changes, you could also re-create the collection fully with the updated schema and use
 the [Collection Alias](./collection-alias.md) feature to do a zero-downtime switch over to the new collection:
 
 Let's say you have a collection called `movies_jan_1` that you want to change the schema for.
@@ -1177,11 +1238,11 @@ Let's say you have a collection called `movies_jan_1` that you want to change th
 5. [Update the collection alias](./collection-alias.md#create-or-update-an-alias) to now point to the new collection. Eg: Update `movies` to now point to `movies_feb_1`.
 6. Stop your application from sending writes to the old collection and [drop the old collection](#drop-a-collection), `movies_jan_1` in our example.
 
-Once you update the alias, any search / indexing operations will go to the new collection (eg: `movies_feb_1`) 
+Once you update the alias, any search / indexing operations will go to the new collection (eg: `movies_feb_1`)
 without you having to do any additional application-side changes.
 
 ### Dynamic field additions
 
-If you only need to _add_ new fields to the schema on the fly, we recommend using [auto-schema detection](#with-auto-schema-detection) 
-when creating the collection. You can essentially define RegEx field names and when documents containing 
+If you only need to _add_ new fields to the schema on the fly, we recommend using [auto-schema detection](#with-auto-schema-detection)
+when creating the collection. You can essentially define RegEx field names and when documents containing
 new field names that match the RegEx come in, the new fields will automatically be added to the schema.

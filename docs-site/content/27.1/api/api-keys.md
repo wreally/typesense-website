@@ -7,7 +7,7 @@ sitemap:
 # API Keys
 Typesense allows you to create API Keys with fine-grained access control. You can restrict access on a per-collection, per-action, per-record or even per-field level or a mixture of these.
 
-Read more about how to manage access to data in Typesense in this [dedicated guide article](../../guide/data-access-control.md). 
+Read more about how to manage access to data in Typesense in this [dedicated guide article](../../guide/data-access-control.md).
 
 :::warning
 We will be using the initial bootstrap key that you started Typesense with (via `--api-key`>) to create additional keys. It's **strongly recommended** that you don't use the bootstrap API key directly in your production applications. Instead you want to generate an appropriately-scoped key for the application at hand.
@@ -19,7 +19,7 @@ We will be using the initial bootstrap key that you started Typesense with (via 
 
 Let's begin by creating an API key that allows you to do all operations, i.e. it's effectively an admin key and is equivalent to the key that you start Typesense with (via `--api-key`).
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -93,6 +93,17 @@ ApiKey apiKey = client.keys().create(apiKeySchema);
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+key, err := client.Keys().Create(context.Background(), &api.ApiKeySchema{
+  Description: "Admin key.",
+  Actions:     []string{"*"},
+  Collections: []string{"*"},
+})
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -128,7 +139,7 @@ The generated key is only returned during creation. You want to store this key c
 
 Let's now see how we can create a search-only key that allows you to limit the key's scope to only the search action, and also for only a specific collection.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -198,6 +209,17 @@ collectionValues.add("intbooks");
 apiKeySchema.description("Search only Key").actions(actionValues).collections(collectionValues);
 
 ApiKey apiKey = client.keys().create(apiKeySchema);
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Keys().Create(context.Background(), &api.ApiKeySchema{
+  Description: "Search-only companies key.",
+  Actions:     []string{"documents:search"},
+  Collections: []string{"companies"},
+})
 ```
 
   </template>
@@ -283,7 +305,7 @@ The collection names can contain regular expressions. For example, if you have m
 
 This is a _sample_ list of actions.
 
-In general, you want to use the format `resource:verb` pattern to indicate an action, where `verb` can be one of `create`, `delete`, `get`, `list`, `search`, or `*`. 
+In general, you want to use the format `resource:verb` pattern to indicate an action, where `verb` can be one of `create`, `delete`, `get`, `list`, `search`, or `*`.
 
 #### Collection actions
 
@@ -397,7 +419,7 @@ In general, you want to use the format `resource:verb` pattern to indicate an ac
 ## Retrieve an API Key
 Retrieve (metadata about) a key.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -438,6 +460,13 @@ final key = await client.key(1).retrieve();
 
 ```java
 ApiKey apiKey = client.keys(1).retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+key, err := client.Key(1).Retrieve(context.Background())
 ```
 
   </template>
@@ -486,7 +515,7 @@ Notice how only the key prefix is returned when you retrieve a key. Due to secur
 ## List all Keys
 Retrieve (metadata about) all keys.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -526,6 +555,13 @@ await client.keys.retrieve();
 
 ```java
 ApiKeysResponse apiKeysResponse = client.keys().retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Keys().Retrieve(context.Background())
 ```
 
   </template>
@@ -594,7 +630,7 @@ Notice how only the key prefix is returned when you retrieve a key. Due to secur
 ## Delete API Key
 Delete an API key given its ID.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -638,6 +674,13 @@ ApiKey apiKey = client.keys(1).delete();
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+client.Key(1).Delete(context.Background())
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -677,20 +720,20 @@ curl 'http://localhost:8108/keys/1' \
 You can generate scoped search API keys that have embedded search parameters in them. This is useful in a few different scenarios:
 
 1. You can index data from multiple users/customers in a single Typesense collection (aka multi-tenancy) and create scoped search keys with embedded `filter_by` parameters that only allow users access to their own subset of data.
-2. You can embed any [search parameters](search.md#search-parameters) (for eg: `exclude_fields` or `limit_hits`) to prevent users from being able to modify it client-side. 
+2. You can embed any [search parameters](search.md#search-parameters) (for eg: `exclude_fields` or `limit_hits`) to prevent users from being able to modify it client-side.
 
 When you use these scoped search keys in a search API call, the parameters you embedded in them will be automatically applied by Typesense and users will not be able to override them.
 
 ### Example
 
-Let's take the first use-case of storing data from multiple users in a single collection. 
+Let's take the first use-case of storing data from multiple users in a single collection.
 
-1. First you'd add an array field called `accessible_to_user_ids` to each document in your collection, listing all the users who should have access to the document in that field. 
+1. First you'd add an array field called `accessible_to_user_ids` to each document in your collection, listing all the users who should have access to the document in that field.
 2. Then when a user with say `user_id: 1` lands on your search experience, you'd generate a unique scoped search API key for them (on your backend server), with an embedded filter of `filter_by: accessible_to_user_ids:=1`.
 
 When you make a search API call with this scoped search API key, Typesense will automatically apply the `filter_by`, so the user will effectively only have access to search through documents that have their own user_id listed in the `accessible_to_user_ids` field.
 
-Now let's say you also don't want users to know the entire list of users_ids that have access to a document, you can also embed `exclude_fields: accessible_to_user_ids` in the scoped API key, so it doesn't get returned in the response.  
+Now let's say you also don't want users to know the entire list of users_ids that have access to a document, you can also embed `exclude_fields: accessible_to_user_ids` in the scoped API key, so it doesn't get returned in the response.
 
 ### Role-based access <Badge text="Advanced"/>
 
@@ -713,10 +756,10 @@ Once a parent Search API Key is revoked, all scoped API keys that were generated
 
 ### Usage
 
-We can generate scoped search API keys without having to make any calls to the Typesense server. 
+We can generate scoped search API keys without having to make any calls to the Typesense server.
 
-We should use an API key that we previously generated with a **search scope (only)**, create an HMAC digest of the 
-parameters with this key and use that as the API key. Our client libraries handle this logic for you, but you can also 
+We should use an API key that we previously generated with a **search scope (only)**, create an HMAC digest of the
+parameters with this key and use that as the API key. Our client libraries handle this logic for you, but you can also
 generate scoped search API keys from the command line.
 
 ::: tip
@@ -724,11 +767,11 @@ Scoped search API keys must only be created from a parent API key that has no ot
 :::
 
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
-// Make sure that the parent search key you use to generate a scoped search key 
+// Make sure that the parent search key you use to generate a scoped search key
 //  has no other permissions besides `documents:search`
 
 keyWithSearchPermissions = 'RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127'
@@ -740,7 +783,7 @@ client.keys().generateScopedSearchKey(keyWithSearchPermissions, {'filter_by': 'c
   <template v-slot:PHP>
 
 ```php
-// Make sure that the parent search key you use to generate a scoped search key 
+// Make sure that the parent search key you use to generate a scoped search key
 //  has no other permissions besides `documents:search`
 
 $keyWithSearchPermissions = 'RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127';
@@ -751,7 +794,7 @@ $client->keys->generateScopedSearchKey($keyWithSearchPermissions, ['filter_by' =
   <template v-slot:Python>
 
 ```py
-# Make sure that the parent search key you use to generate a scoped search key 
+# Make sure that the parent search key you use to generate a scoped search key
 #  has no other permissions besides `documents:search`
 
 key_with_search_permissions = 'RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127'
@@ -762,7 +805,7 @@ client.keys.generate_scoped_search_key(key_with_search_permissions, {"filter_by"
   <template v-slot:Ruby>
 
 ```rb
-# Make sure that the parent search key you use to generate a scoped search key 
+# Make sure that the parent search key you use to generate a scoped search key
 #  has no other permissions besides `documents:search`
 
 key_with_search_permissions = 'RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127'
@@ -773,7 +816,7 @@ client.keys().generate_scoped_search_key(key_with_search_permissions, {'filter_b
   <template v-slot:Dart>
 
 ```dart
-// Make sure that the parent search key you use to generate a scoped search key 
+// Make sure that the parent search key you use to generate a scoped search key
 //  has no other permissions besides `documents:search`
 
 final keyWithSearchPermissions = 'RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127';
@@ -784,7 +827,7 @@ client.keys.generateScopedSearchKey(keyWithSearchPermissions, {'filter_by': 'com
   <template v-slot:Java>
 
 ```java
-// Make sure that the parent search key you use to generate a scoped search key 
+// Make sure that the parent search key you use to generate a scoped search key
 //  has no other permissions besides `documents:search`
 String keyWithSearchPermissions = "RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127";
 
@@ -795,10 +838,24 @@ String scopedSearchKey = client.keys().generateScopedSearchKey(keyWithSearchPerm
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+// Make sure that the parent search key you use to generate a scoped search key
+//  has no other permissions besides `documents:search`
+
+keyWithSearchPermissions := "RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127"
+client.Keys().GenerateScopedSearchKey(keyWithSearchPermissions, map[string]interface{}{
+  "filter_by":  "company_id:124",
+  "expires_at": 1906054106,
+})
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
-# Make sure that the parent search key you use to generate a scoped search key 
+# Make sure that the parent search key you use to generate a scoped search key
 #  has no other permissions besides `documents:search`
 
 KEY_WITH_SEARCH_PERMISSIONS="RN23GFr1s6jQ9kgSNg2O7fYcAUXU7127"

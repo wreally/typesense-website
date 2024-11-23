@@ -21,7 +21,7 @@ When using Synonyms and [Overrides](./curation.md) together, Overrides are handl
 
 ### Multi-way synonym
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -94,6 +94,18 @@ client.collections("products").synonyms().upsert("coat-synonyms", synonym);
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+synonym := &api.SearchSynonymSchema{
+  Synonyms: []string{"blazer", "coat", "jacket"},
+}
+
+// Creates/updates a synonym called `coat-synonyms` in the `products` collection
+client.Collection("products").Synonyms().Upsert(context.Background(), "coat-synonyms", synonym)
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -134,7 +146,7 @@ curl "http://localhost:8108/collections/products/synonyms/coat-synonyms" -X PUT 
 
 ### One-way synonym
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -213,6 +225,19 @@ client.collections("products").synonyms().upsert("smart-phone-synonyms", synonym
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+synonym := &api.SearchSynonymSchema{
+  Root:     pointer.String("smart phone"),
+  Synonyms: []string{"iphone", "android"},
+}
+
+// Creates/updates a synonym called `smart-phone-synonyms` in the `products` collection
+client.Collection("products").Synonyms().Upsert(context.Background(), "smart-phone-synonyms", synonym)
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -272,7 +297,7 @@ curl "http://localhost:8108/collections/products/synonyms/smart-phone-synonyms" 
 ## Retrieve a synonym
 We can retrieve a single synonym.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -316,6 +341,13 @@ SearchSynonym searchSynonym = client.collections("products").synonyms("coat-syno
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("products").Synonym("coat-synonyms").Retrieve(context.Background())
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -354,10 +386,10 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" "http://localhost:8108/colle
 ## List all synonyms
 List all synonyms associated with a given collection.
 
-NOTE: By default, ALL synonyms are returned, but you can use the `offset` and `limit` parameters to 
+NOTE: By default, ALL synonyms are returned, but you can use the `offset` and `limit` parameters to
 paginate on the listing.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -398,6 +430,13 @@ await client.collection('products').synonyms.retrieve();
 
 ```java
 SearchSynonymsResponse searchSynonymsResponse =  client.collections("products").synonyms().retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("products").Synonyms().Retrieve(context.Background())
 ```
 
   </template>
@@ -444,7 +483,7 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
 ## Delete a synonym
 Delete a synonym associated with a collection.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -485,6 +524,13 @@ await client.collection('products').synonym('coat-synonyms').delete();
 
 ```java
 SearchSynonym searchSynonym = client.collections("products").synonyms("coat-synonyms").delete();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("products").Synonym("coat-synonyms").Delete(context.Background())
 ```
 
   </template>

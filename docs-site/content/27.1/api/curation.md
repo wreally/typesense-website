@@ -19,16 +19,16 @@ When using [Synonyms](./synonyms.md) and Overrides together, Overrides are handl
 
 In the following example, we will:
 
-1. Use the `includes` condition to place the documents with ids `422` and `54` in the first and second positions 
+1. Use the `includes` condition to place the documents with ids `422` and `54` in the first and second positions
    respectively.
-2. Use the `excludes` condition to remove the document with id `287` from the results. 
-   
+2. Use the `excludes` condition to remove the document with id `287` from the results.
+
 Typesense allows you to use both `includes` and `excludes` or just one of them for curation.
 
-Note how we are applying these overrides to an `exact` match of the query `apple`. Instead, if we want to match all 
+Note how we are applying these overrides to an `exact` match of the query `apple`. Instead, if we want to match all
 queries containing the word `apple`, we will use the `contains` match instead.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -153,6 +153,27 @@ SearchOverride searchOverride = client.collections("companies").overrides().upse
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+override := &api.SearchOverrideSchema{
+  Rule: api.SearchOverrideRule{
+    Query: "apple",
+    Match: "exact",
+  },
+  Includes: &[]api.SearchOverrideInclude{
+    {Id: "422", Position: 1},
+    {Id: "54", Position: 2},
+  },
+  Excludes: &[]api.SearchOverrideExclude{
+    {Id: "287"},
+  },
+}
+// Creates/updates an override called `customize-apple` in the `companies` collection
+client.Collection("companies").Overrides().Upsert(context.Background(), "customize-apple", override)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -228,7 +249,7 @@ You can add tags to override rules and then trigger curation by referring to the
     ]
 }
 ```
-Now, when we search the collection, we can pass one or more tags via the `override_tags` parameter to directly 
+Now, when we search the collection, we can pass one or more tags via the `override_tags` parameter to directly
 trigger the curations rules that match the tags:
 
 ```json
@@ -241,18 +262,18 @@ trigger the curations rules that match the tags:
 
 If `override1` is tagged with `tagA,tagB`, and `override2` is tagged with just `tagA` and `override3` is not tagged:
 
-1. If a search sets `override_tags` to `tagA`, we only consider overrides that contain `tagA` (`override1` and `override2`) 
+1. If a search sets `override_tags` to `tagA`, we only consider overrides that contain `tagA` (`override1` and `override2`)
    with the usual logic -- in alphabetic order of override name and then process both if stop rule processing is false.
-2. If a search sets `override_tags` to `tagA,tagB`, we evaluate any rules that contain both `tagA` and tagB first, 
-   then rules with either `tagA` or `tagB`, but not overrides that contain no tags. Within each group, we evaluate 
-   in alphabetic order of override name and process multiple rules if `stop_processing` is `false`. 
+2. If a search sets `override_tags` to `tagA,tagB`, we evaluate any rules that contain both `tagA` and tagB first,
+   then rules with either `tagA` or `tagB`, but not overrides that contain no tags. Within each group, we evaluate
+   in alphabetic order of override name and process multiple rules if `stop_processing` is `false`.
 3. If a search sets no `override_tags`, we only consider rules that have no tags associated with them.
 
 ### Dynamic filtering
 
 In the following example, we will apply a filter dynamically to a query that matches a rule.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -353,6 +374,23 @@ SearchOverride searchOverride = client.collections("companies").overrides().upse
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+override := &api.SearchOverrideSchema{
+  Rule: api.SearchOverrideRule{
+    Query: "{brand} phone",
+    Match: "contains",
+  },
+  FilterBy:            pointer.String("brand:={brand}"),
+  RemoveMatchedTokens: pointer.True(),
+}
+
+// Creates/updates an override called `brand-filter` in the `companies` collection
+client.Collection("companies").Overrides().Upsert(context.Background(), "brand-filter", override)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -371,22 +409,22 @@ curl "http://localhost:8108/collections/companies/overrides/brand-filter" -X PUT
   </template>
 </Tabs>
 
-With this override in effect, any query that contains a brand will automatically be filtered on the matching brand 
-directly. In addition, the brand will also be removed from the original query tokens, so that the search is made 
-only on the remaining tokens. 
+With this override in effect, any query that contains a brand will automatically be filtered on the matching brand
+directly. In addition, the brand will also be removed from the original query tokens, so that the search is made
+only on the remaining tokens.
 
-For example, if someone searches for `sony ericsson phone`, the query will be re-written as `phone` and a 
-`sony ericsson` brand filter will be directly applied. If you don't wish to remove matching tokens from the query, 
+For example, if someone searches for `sony ericsson phone`, the query will be re-written as `phone` and a
+`sony ericsson` brand filter will be directly applied. If you don't wish to remove matching tokens from the query,
 set `remove_matched_tokens` to `false`. By default, this parameter is set to `true`.
 
 :::tip Note
-Fields used in the query for dynamic filtering should have `facet: true` in their field definition in the schema. 
+Fields used in the query for dynamic filtering should have `facet: true` in their field definition in the schema.
 :::
 
 ### Curation and filtering
 
 `includes` is used to fix documents at certain positions in the results, but it's possible for these documents to
-be filtered out when using `filter_curated_hits: true`. 
+be filtered out when using `filter_curated_hits: true`.
 
 When this happens, Typesense "slides" any remaining documents added by `includes` up in the results.
 For example, say you have a collection of product records that look like this when sorted on a `ranking` field:
@@ -467,7 +505,7 @@ Listing all overrides associated with a given collection.
 
 NOTE: By default, ALL overrides are returned, but you can use the `offset` and `limit` parameters to paginate on the listing.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -508,6 +546,13 @@ await client.collection('companies').overrides.retrieve();
 
 ```java
 SearchOverridesResponse searchOverridesResponse = client.collections("companies").overrides().retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("companies").Overrides().Retrieve(context.Background())
 ```
 
   </template>
@@ -565,7 +610,7 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
 ## Retrieve an override
 Fetch an individual override associated with a collection.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -606,6 +651,13 @@ await client.collection('companies').override('customize-apple').retrieve();
 
 ```java
 SearchOverride searchOverride = client.collections("companies").overrides("customize-apple").retrieve();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("companies").Override("customize-apple").Retrieve(context.Background())
 ```
 
   </template>
@@ -659,7 +711,7 @@ curl "http://localhost:8108/collections/companies/overrides/customize-apple" -X 
 ## Delete an override
 Deleting an override associated with a collection.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -700,6 +752,13 @@ await client.collection('companies').override('customize-apple').delete();
 
 ```java
 SearchOverride searchOverride = client.collections("companies").overrides("customize-apple").delete();
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Collection("companies").Override("customize-apple").Delete(context.Background())
 ```
 
   </template>

@@ -11,7 +11,7 @@ Creates a point-in-time snapshot of a Typesense node's state and data in the spe
 
 You can then backup the snapshot directory that gets created and later restore it as a data directory, as needed.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -58,6 +58,13 @@ client.operations.perform("snapshot",query);
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+client.Operations().Snapshot(context.Background(), "/tmp/typesense-data-snapshot")
+```
+
+  </template>
   <template v-slot:Swift>
 
 ```swift
@@ -100,8 +107,8 @@ curl "http://localhost:8108/operations/snapshot?snapshot_path=/tmp/typesense-dat
 
 ## Compacting the on-disk database
 
-Typesense uses RocksDB to store your documents on the disk. If you do frequent writes or updates, you could benefit 
-from running a compaction of the underlying RocksDB database. This could reduce the size of the database and decrease 
+Typesense uses RocksDB to store your documents on the disk. If you do frequent writes or updates, you could benefit
+from running a compaction of the underlying RocksDB database. This could reduce the size of the database and decrease
 read latency.
 
 While the database will _not_ block during this operation, we recommend running it during off-peak hours.
@@ -118,7 +125,7 @@ Triggers a follower node to initiate the raft voting process, which triggers lea
 
 The follower node that you run this operation against will become the new leader, once this command succeeds.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Swift','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Swift','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -159,6 +166,13 @@ await client.operations.initLeaderElection();
 
 ```java
 client.operations.perform("vote");
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Operations().Vote(context.Background())
 ```
 
   </template>
@@ -251,7 +265,7 @@ curl "http://localhost:8108/config" \
 
 ## Clear cache
 
-Responses of search requests that are sent with `use_cache` parameter are cached in a LRU cache. To clear 
+Responses of search requests that are sent with `use_cache` parameter are cached in a LRU cache. To clear
 this cache completely:
 
 ```shell
@@ -268,7 +282,7 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" -X POST \
 
 Get current RAM, CPU, Disk & Network usage metrics.
 
-<Tabs :tabs="['Dart','Java','Swift','Shell']">
+<Tabs :tabs="['Dart','Java','Go','Swift','Shell']">
   <template v-slot:Dart>
 
 ```dart
@@ -279,6 +293,12 @@ await client.metrics.retrieve();
 
 ```java
 client.metrics.retrieve();
+```
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Metrics().Retrieve(context.Background())
 ```
   </template>
   <template v-slot:Swift>
@@ -347,11 +367,17 @@ Get stats about API endpoints.
 
 This endpoint returns average requests per second and latencies for all requests in the last 10 seconds.
 
-<Tabs :tabs="['Dart','Swift','Shell']">
+<Tabs :tabs="['Dart','Go','Swift','Shell']">
   <template v-slot:Dart>
 
 ```dart
 await client.stats.retrieve();
+```
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Stats().Retrieve(context.Background())
 ```
   </template>
   <template v-slot:Swift>
@@ -407,11 +433,17 @@ If you use Prometheus, here's a community-maintained project that lets you perio
 
 Get health information about a Typesense node.
 
-<Tabs :tabs="['Dart','Swift','Shell']">
+<Tabs :tabs="['Dart','Go','Swift','Shell']">
   <template v-slot:Dart>
 
 ```dart
 await client.health.retrieve();
+```
+  </template>
+  <template v-slot:Go>
+
+```go
+client.Health(context.Background(), 3*time.Second)
 ```
   </template>
   <template v-slot:Swift>
@@ -442,7 +474,7 @@ curl "http://localhost:8108/health"
   </template>
 </Tabs>
 
-When a node is running out of memory / disk, the API response will have an additional `resource_error` field that's 
+When a node is running out of memory / disk, the API response will have an additional `resource_error` field that's
 set to either `OUT_OF_DISK` or `OUT_OF_MEMORY`.
 
 #### Definition

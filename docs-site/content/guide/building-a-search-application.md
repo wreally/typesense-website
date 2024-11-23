@@ -17,10 +17,10 @@ This should give you a file called `books.jsonl` which we'll use below.
 ## Initializing the client
 Let's begin by configuring the Typesense client by pointing it to a Typesense node.
 
-- Be sure to use the same API key that you used to [start the Typesense server](./install-typesense.md#🎬-start) earlier. 
+- Be sure to use the same API key that you used to [start the Typesense server](./install-typesense.md#🎬-start) earlier.
 - Or if you're using [Typesense Cloud](./install-typesense.md#option-1-typesense-cloud), click on the "Generate API key" button on the cluster page. This will give you a set of hostnames and API keys to use.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -119,6 +119,26 @@ Client client = new Client(configuration);
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+import (
+  "github.com/typesense/typesense-go/v2/typesense"
+  "github.com/typesense/typesense-go/v2/typesense/api"
+  "github.com/typesense/typesense-go/v2/typesense/api/pointer"
+)
+
+client := typesense.NewClient(
+    typesense.WithNodes([]string{
+      // For Typesense Cloud use "https://xxx-1.a1.typesense.net:443"
+      "http://localhost:8108",
+    }),
+    typesense.WithAPIKey("<API_KEY>"),
+    typesense.WithConnectionTimeout(2*time.Second),
+)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -137,7 +157,7 @@ That's it - we're now ready to start interacting with the Typesense server.
 ## Creating a "books" collection
 In Typesense, a [`Collection`](../latest/api/collections.md) is a group of related [`Documents`](../latest/api/documents.md) that is roughly equivalent to a table in a relational database. When we create a collection, we give it a name and describe the fields that will be indexed when a document is added to the collection.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -242,6 +262,25 @@ CollectionResponse collectionResponse = client.collections().create(collectionSc
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+booksSchema := &api.CollectionSchema{
+  Name: "companies",
+  Fields: []api.Field{
+    {Name: "title", Type: "string"},
+    {Name: "authors", Type: "string[]", Facet: pointer.True()},
+    {Name: "publication_year", Type: "int32", Facet: pointer.True()},
+    {Name: "ratings_count", Type: "int32"},
+    {Name: "average_rating", Type: "float"},
+  },
+  DefaultSortingField: pointer.String("ratings_count"),
+}
+
+client.Collections().Create(context.Background(), booksSchema)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -256,7 +295,7 @@ curl "${TYPESENSE_HOST}/collections" \
 
           {"name": "publication_year", "type": "int32", "facet": true },
           {"name": "ratings_count", "type": "int32" },
-          {"name": "average_rating", "type": "float" }       
+          {"name": "average_rating", "type": "float" }
         ],
         "default_sorting_field": "ratings_count"
       }'
@@ -270,19 +309,18 @@ For each field, we define its `name, type` and whether it's a `facet` field. A f
 We also define a `default_sorting_field` that determines how the results must be sorted when no `sort_by` clause is provided. In this case, books that have more ratings will be ranked higher.
 
 :::tip Indexed fields vs un-indexed fields
-You only need to include fields that you want to search / filter / facet / sort / group_by in the collection schema. We call these indexed fields. Indexed fields are stored in RAM with a backup on disk.  
+You only need to include fields that you want to search / filter / facet / sort / group_by in the collection schema. We call these indexed fields. Indexed fields are stored in RAM with a backup on disk.
 
-You can still send additional fields that you might use for display purposes (for eg: image URLs) when importing the documents into Typesense. 
-Any fields not mentioned in the schema, but present in an imported document, will only be stored on disk and returned when the document is a hit. 
+You can still send additional fields that you might use for display purposes (for eg: image URLs) when importing the documents into Typesense.
+Any fields not mentioned in the schema, but present in an imported document, will only be stored on disk and returned when the document is a hit.
 We call these un-indexed fields and this helps conserve memory usage and avoid wasted CPU cycles in trying to otherwise build unused indices for these fields in memory.
 :::
-
 
 ## Adding books to the collection
 
 We're now ready to index some books into the collection we just created.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -327,6 +365,20 @@ client.collections("books").documents().import_(booksData)
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+params := &api.ImportDocumentsParams{
+  Action:    pointer.String("create"),
+  BatchSize: pointer.Int(40),
+}
+importBody, err := os.Open("/tmp/books.jsonl")
+// defer close, error handling ...
+
+client.Collection("books").Documents().ImportJsonl(context.Background(), importBody, params)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -342,8 +394,7 @@ curl "${TYPESENSE_HOST}/collections/books/documents/import" \
 ## Searching for books
 We will start with a really simple search query - let's search for `harry potter` and ask Typesense to rank books that have more ratings higher in the results.
 
-
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -413,6 +464,19 @@ SearchResult searchResult = client.collections("books").documents().search(searc
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+searchParameters := &api.SearchCollectionParams{
+  Q:        pointer.String("harry potter"),
+  QueryBy:  pointer.String("title"),
+  SortBy:   &([]string{"ratings_count:desc"}),
+}
+
+client.Collection("books").Documents().Search(context.Background(), searchParameters)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -477,7 +541,7 @@ Read more about Semantic Search in the dedicated guide article [here](./semantic
 ## Filtering results
 Now, let's tweak our query to only fetch books that are published before the year 1998. To do that, we just have to add a `filter_by` clause to our query:
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -552,6 +616,20 @@ SearchResult searchResult = client.collections("books").documents().search(searc
 ```
 
   </template>
+  <template v-slot:Go>
+
+```go
+searchParameters := &api.SearchCollectionParams{
+  Q:        pointer.String("harry potter"),
+  QueryBy:  pointer.String("title"),
+  FilterBy: pointer.String("publication_year:<1998"),
+  SortBy:   &([]string{"publication_year:desc"}),
+}
+
+client.Collection("companies").Documents().Search(context.Background(), searchParameters)
+```
+
+  </template>
   <template v-slot:Shell>
 
 ```bash
@@ -605,8 +683,7 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
 ## Faceting
 Let's facet the search results by the authors field to see how that works. Let's also use this example to see how Typesense handles typographic errors. Let's search for `experyment` (notice the typo!).
 
-
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -678,6 +755,20 @@ SearchParameters searchParameters = new SearchParameters()
                                                 .addFacetByItem("authors_facet")
                                                 .addSortByItem("average_rating:desc");
 SearchResult searchResult = client.collections("books").documents().search(searchParameters);
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+searchParameters := &api.SearchCollectionParams{
+  Q:        pointer.String("experyment"),
+  QueryBy:  pointer.String("title"),
+  FacetBy:  pointer.String("authors"),
+  SortBy:   &([]string{"average_rating:desc"}),
+}
+
+client.Collection("companies").Documents().Search(context.Background(), searchParameters)
 ```
 
   </template>

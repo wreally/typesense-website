@@ -10,7 +10,7 @@ You can send multiple search requests in a single HTTP request, using the Multi-
 You can also use this feature to do a **federated search** across multiple collections in a single HTTP request.
 For eg: in an ecommerce products dataset, you can show results from both a "products" collection, and a "brands" collection to the user, by searching them in parallel with a `multi_search` request.
 
-<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Shell']">
+<Tabs :tabs="['JavaScript','PHP','Python','Ruby','Dart','Java','Go','Shell']">
   <template v-slot:JavaScript>
 
 ```js
@@ -166,6 +166,32 @@ HashMap<String,String> commonSearchParams = new HashMap<>();
 commonSearchParams.put("query_by","name");
 
 client.multiSearch.perform(searchRequests, commonSearchParams);
+```
+
+  </template>
+  <template v-slot:Go>
+
+```go
+searchRequests := api.MultiSearchSearchesParameter{
+  Searches: []api.MultiSearchCollectionParameters{
+    {
+      Collection: "products",
+      Q:          pointer.String("shoe"),
+      FilterBy:   pointer.String("price:=[50..120]"),
+    },
+    {
+      Collection: "brands",
+      Q:          pointer.String("Nike"),
+    },
+  },
+}
+
+// Search parameters that are common to all searches go here
+commonSearchParams := &api.MultiSearchParams{
+  QueryBy: pointer.String("name"),
+}
+
+client.MultiSearch.Perform(context.Background(), commonSearchParams, searchRequests)
 ```
 
   </template>

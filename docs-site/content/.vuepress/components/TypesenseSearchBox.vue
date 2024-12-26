@@ -21,6 +21,8 @@ export default {
   data() {
     return {
       placeholder: undefined,
+      guid: crypto.randomUUID(),
+      currentQuery: '',
     }
   },
 
@@ -61,9 +63,18 @@ export default {
               const { pathname, hash } = new URL(suggestion.url)
               const routepath = pathname.replace(this.$site.base, '/')
               const _hash = decodeURIComponent(hash)
+              this.sendAnalyticsEvent({
+                query: this.currentQuery,
+                docId: suggestion.id,
+                userId: this.guid,
+                typesenseServerConfig: userOptions.typesenseServerConfig,
+              }).catch(error => {
+                console.error('Error sending analytics:', error)
+              })
               this.$router.push(`${routepath}${_hash}`)
             },
             queryHook: query => {
+              this.currentQuery = query
               if (!window.gtag) {
                 return
               }
@@ -79,6 +90,39 @@ export default {
           }),
         )
       })
+    },
+
+    sendAnalyticsEvent({ query, docId, userId, typesenseServerConfig }) {
+      if (!typesenseServerConfig) {
+        return
+      }
+      return fetch(
+        `${typesenseServerConfig.nearestNode.protocol}://${typesenseServerConfig.nearestNode.host}:${typesenseServerConfig.nearestNode.port}/analytics/events`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-TYPESENSE-API-KEY': typesenseServerConfig.apiKey,
+          },
+          body: JSON.stringify({
+            type: 'click',
+            name: 'docs_click',
+            data: {
+              q: query,
+              user_id: userId,
+              doc_id: docId,
+            },
+          }),
+        },
+      )
+        .then(response => {
+          if (!response.ok) {
+            console.warn('Analytics event could not be sent:', response.text())
+          }
+        })
+        .catch(error => {
+          console.warn('Failed to send analytics event:', error)
+        })
     },
 
     update(options, lang) {

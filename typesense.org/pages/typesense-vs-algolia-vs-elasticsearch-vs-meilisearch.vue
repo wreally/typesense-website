@@ -150,11 +150,7 @@
                   <td>✅<br /><br />RAFT-based multi-node clustering</td>
                   <td>✅<br /><br />RAFT-based multi-node clustering</td>
                   <td>✅<br /><br />Active-passive replication</td>
-                  <td class="text-danger">
-                    ❌<br /><br />Only supports a single-node setup, which
-                    creates a single point of failure and so is not fault
-                    tolerant / production-ready.
-                  </td>
+                  <td>❌</td>
                 </tr>
                 <tr>
                   <td class="font-weight-bold">GPU Acceleration Support</td>

@@ -727,7 +727,7 @@ Let's create a preset with name `listing_view`.
 ```js
   await client.presets().upsert("listing_view", {
     value: {
-      searches: [{ collection: "products", q: "*", sort_by: "popularity" }],
+      collection: "products", q: "*", sort_by: "popularity",
     },
   });
 ```
@@ -738,9 +738,7 @@ Let's create a preset with name `listing_view`.
 ```dart
   await client.presets.upsert('listing_view', {
     'value': {
-      'searches': [
-        {'collection': 'products', 'q': '*','sort_by': 'popularity'}
-      ]
+      'collection': 'products', 'q': '*','sort_by': 'popularity'
     }
   });
 ```
@@ -752,7 +750,7 @@ Let's create a preset with name `listing_view`.
 curl "http://localhost:8108/presets/listing_view" -X PUT \
 -H "Content-Type: application/json" \
 -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" \
--d '{"value": {"searches":[{"collection":"products","q":"*", "sort_by": "popularity"}]}}'
+-d '{"value": {"collection":"products","q":"*", "sort_by": "popularity"}}'
 ```
   </template>
 </Tabs>
@@ -787,37 +785,30 @@ curl -H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}"  -X POST \
   </template>
 </Tabs>
 
-You can use the preset configuration for a `GET .../search` end-point as well. 
+:::tip
+The `value` key in the preset configuration can also match the search parameters for <RouterLink :to="`/${$site.themeConfig.typesenseLatestVersion}/api/federated-multi-search.html`">Federated / Multi Search</RouterLink>. For example:
 
-The only requirement is that for 
-`GET .../search`, the stored preset value should be a simple dictionary of search configurations, like this.
-
-<Tabs :tabs="['Dart','Shell']">
-  <template v-slot:Dart>
-
-```dart
-  await client.presets.upsert('listing_view', {
-    'value': {
-      {
-        'collection': 'products',
-        'q': '*',
-        'sort_by': 'popularity',
-      }
-    }
-  });
+```js
+  await client.presets().upsert("listing_view", {
+    value: {
+      searches: [
+        {
+          collection: "products",
+          q: "*",
+          sort_by: "popularity",
+        },
+        {
+          collection: "blog_posts",
+          q: "*",
+          sort_by: "published_at:desc",
+        }
+      ],
+    },
+  })
 ```
+:::
 
-  </template>
-  <template v-slot:Shell>
-
-```shell
-curl "http://localhost:8108/presets/listing_view" -X PUT \
--H "Content-Type: application/json" \
--H "X-TYPESENSE-API-KEY: ${TYPESENSE_API_KEY}" -d '
-{"value": {"collection":"products","q":"*", "sort_by": "popularity"}}'
-```
-  </template>
-</Tabs>
+It's generally recommended to use single-search presets for flexibility. You can then combine them in a multi-search request using the `preset` parameter.
 
 :::tip
 Explicit query parameters passed to the search end-point will override parameters stored in preset value.
